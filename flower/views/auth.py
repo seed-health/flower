@@ -347,27 +347,27 @@ class SeedLoginHandler(BaseHandler, tornado.auth.OAuth2Mixin):
 
     @property
     def base_url(self):
-        return "http://172.18.0.1:8000"
+        #return "http://127.0.0.1:8000"
         return os.environ.get('FLOWER_OAUTH2_SEED_BASE_URL')
 
     @property
     def _OAUTH_AUTHORIZE_URL(self):
-        return F"{self.base_url}/o/authorize"
+        return F"{self.base_url}/o/authorize/"
 
     @property
     def _OAUTH_ACCESS_TOKEN_URL(self):
-        return F"{self.base_url}/o/token"
+        #return "http://172.18.0.1:8000/o/token/"
+        return F"{self.base_url}/o/token/"
 
     @tornado.gen.coroutine
     def get_access_token(self, redirect_uri, code):
         body = urlencode({
             "redirect_uri": redirect_uri,
             "code": code,
-            "client_id": self.settings[self._OAUTH_SETTINGS_KEY]['key'],
-            "client_secret": self.settings[self._OAUTH_SETTINGS_KEY]['secret'],
+            "client_id": self.settings['oauth']['key'],
+            "client_secret": self.settings['oauth']['secret'],
             "grant_type": "authorization_code",
         })
-
         response = yield self.get_auth_http_client().fetch(
             self._OAUTH_ACCESS_TOKEN_URL,
             method="POST",
@@ -384,11 +384,11 @@ class SeedLoginHandler(BaseHandler, tornado.auth.OAuth2Mixin):
     def get(self):
         redirect_uri = self.settings['oauth']['redirect_uri']
         if self.get_argument('code', False):
-            token = yield self.get_ar(
+            token = yield self.get_access_token(
                 redirect_uri=redirect_uri,
                 code=self.get_argument('code'),
             )
-            yield self._on_auth(user)
+            yield self._on_auth(token)
         else:
             yield self.authorize_redirect(
                 redirect_uri=redirect_uri,
@@ -401,9 +401,7 @@ class SeedLoginHandler(BaseHandler, tornado.auth.OAuth2Mixin):
         if not access_token_response:
             raise tornado.web.HTTPError(500, 'OAuth authentication failed')
         access_token = access_token_response['access_token']
-        print(access_token)
-        # We need to verify Token to get an email?
-        #self.set_secure_cookie("user", str(email))
+        email = "admin@seed.com"
         self.set_secure_cookie("user", str(email))
         next_ = self.get_argument('next', self.application.options.url_prefix or '/')
         if self.application.options.url_prefix and next_[0] != '/':
