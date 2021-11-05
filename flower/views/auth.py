@@ -359,6 +359,11 @@ class SeedLoginHandler(BaseHandler, tornado.auth.OAuth2Mixin):
         #return "http://172.18.0.1:8000/o/token/"
         return F"{self.base_url}/o/token/"
 
+    @property
+    def _OAUTH_USER_FETCH_URL(self):
+        #return "http://172.18.0.1:8000/account/user/"
+        return F"{self.base_url}/user/"
+
     @tornado.gen.coroutine
     def get_access_token(self, redirect_uri, code):
         body = urlencode({
@@ -401,7 +406,14 @@ class SeedLoginHandler(BaseHandler, tornado.auth.OAuth2Mixin):
         if not access_token_response:
             raise tornado.web.HTTPError(500, 'OAuth authentication failed')
         access_token = access_token_response['access_token']
-        email = "admin@seed.com"
+        try:
+            response = yield self.get_auth_http_client().fetch(
+                self._OAUTH_USER_FETCH_URL,
+                headers={'Authorization': 'Bearer ' + access_token,
+                         'User-agent': 'Tornado auth'})
+        except Exception as e:
+            raise tornado.web.HTTPError(403, 'Seed auth failed: %s' % e)
+        email = json.loads(response.body.decode('utf-8'))['email']
         self.set_secure_cookie("user", str(email))
         next_ = self.get_argument('next', self.application.options.url_prefix or '/')
         if self.application.options.url_prefix and next_[0] != '/':

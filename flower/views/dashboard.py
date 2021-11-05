@@ -36,7 +36,7 @@ class DashboardView(BaseHandler):
             info.update(self._as_dict(worker))
             info.update(status=worker.alive)
             workers[name] = info
-        
+
         if options.purge_offline_workers is not None:
             timestamp = int(time.time())
             offline_workers = []
