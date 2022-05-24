@@ -362,7 +362,7 @@ class SeedLoginHandler(BaseHandler, tornado.auth.OAuth2Mixin):
     @property
     def _OAUTH_USER_FETCH_URL(self):
         #return "http://172.18.0.1:8000/account/user/"
-        return F"{self.base_url}/account/user/"
+        return F"{self.base_url}/user/"
 
     @tornado.gen.coroutine
     def get_access_token(self, redirect_uri, code):
